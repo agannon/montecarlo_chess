@@ -49,6 +49,7 @@ g.load() # loads your pickle file into g so the bot has some preexisting intelli
 * Implement a new save method that doesn't use pickle as the tree is too recursive
 * Rewrite the tree as a graph since there can be identical nodes in the tree that were reached by different paths
     * Not sure how complicated this would actually be to implement
+* Let player retry their move if they type an illegal move instead of breaking the game
 
 
 ###Things learned
