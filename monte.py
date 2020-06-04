@@ -4,12 +4,13 @@ import chess
 import math
 import random
 import time
-import pickle
+import json
 
 SEARCH_TIME = 5
 C = math.sqrt(2)
 
 new_board = chess.Board()
+
 
 class Node:
 
@@ -29,7 +30,7 @@ class Node:
         max_score = 0
         best = None
         for child in self.children.values():
-            child_score = child.wins / child.sims + C * math.sqrt(math.log(self.sims)/child.sims)
+            child_score = child.wins / child.sims + C * math.sqrt(math.log(self.sims) / child.sims)
             if child_score > max_score:
                 max_score = child_score
                 best = child
@@ -46,7 +47,8 @@ class Node:
     # Expansion
 
     def expand_tree(self):
-        new_leaf = random.random() < len(self.legal_moves_remaining) / self.total_legal_moves if self.total_legal_moves else False
+        new_leaf = random.random() < len(
+            self.legal_moves_remaining) / self.total_legal_moves if self.total_legal_moves else False
         bottom = self if new_leaf else self.find_bottom_node()
         board = chess.Board(bottom.boardstate)
         move = random.choice(list(bottom.legal_moves_remaining)) if bottom.legal_moves_remaining else None
@@ -100,9 +102,37 @@ class Node:
                 best = child
         return best
 
-class GameRunner:
+    def serialize(self):
+        string = ''
+        node = self
+        stack = []
+        stack.append(node)
+        while stack:
+            node = stack.pop()
+            if node == ']\175,':
+                string += node
+            else:
+                string += f'\173' \
+                          f'"wins": {node.wins},' \
+                          f'"sims": {node.sims},' \
+                          f'"player": "{node.player}",' \
+                          f'"boardstate": "{node.boardstate}",' \
+                          f'"legal_moves_remaining": {[m.uci() for m in node.legal_moves_remaining]},' \
+                          f'"total_legal_moves": {node.total_legal_moves},' \
+                          f'"children": ['
+                stack.append(']\175,')
+                stack += list(node.children.values())
 
-    memory = 'pickled_tree.P'
+        # reformats string to JSON requirements
+        string = string.replace("'", '"')
+        string = string.replace(",]", "]")
+        string = string[:-1]
+
+        return string
+
+
+class GameRunner:
+    memory = 'saved_tree.json'
 
     def __init__(self):
         # self.player = 'W'
@@ -136,15 +166,12 @@ class GameRunner:
         print(board.result())
 
     def save(self):
-        with open(self.memory, 'wb') as file:
-            pickle.dump(self.root, file)
+        with open(self.memory, 'w') as file:
+            file.write(self.root.serialize())
 
-    def load(self):
-        with open(self.memory, 'rb') as file:
-            self.root = pickle.load(file)
+    # def load(self):
+    #     with open(self.memory, 'rb') as file:
+    #         self.root = pickle.load(file)
+
 
 g = GameRunner()
-
-
-
-
